@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans xmlns="http://www.springframework.org/schema/security"
+	xmlns:beans="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:sec="http://www.springframework.org/schema/security" xmlns:util="http://www.springframework.org/schema/util"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+	    http://www.springframework.org/schema/util https://www.springframework.org/util/spring-util-4.2.xsd
+		http://www.springframework.org/schema/security
+		http://www.springframework.org/schema/security/spring-security.xsd">
+
+	<http pattern="/resources/**" security="none" /> 
+	<http auto-config='true' authentication-manager-ref="authenticationManager">
+		<session-management invalid-session-url="/login?session" />
+		<csrf request-matcher-ref="csrfSecurityRequestMatcher" />
+		<access-denied-handler error-page="/403" />
+		
+		<intercept-url pattern="/login" access="permitAll" /> 
+<!-- 		<intercept-url pattern="/dashboard.htm" access="isAuthenticated()" /> -->	<!-- This URL can be accessed by any loggedin user. -->
+		<intercept-url pattern="/dashboard.htm" access="hasAnyAuthority('ROLE_ADMIN', 'ROLE_CUSTOMER', 'ROLE_AGENT')" />	<!-- This URL can be accessed by specified role based loggedin user. -->  
+		
+		<form-login login-page="/login" default-target-url="/dashboard.htm"
+			authentication-failure-url="/login?error" username-parameter="loginUserName"
+			password-parameter="loginPassword" />
+	
+		<logout logout-success-url="/login?logout" invalidate-session="true"
+				delete-cookies="JSESSIONID" />
+	</http>
+ 
+	<authentication-manager alias="authenticationManager">
+		<authentication-provider user-service-ref="userDetailsServiceImpl">
+			<password-encoder ref="encoder"></password-encoder>
+		</authentication-provider>
+	</authentication-manager>
+
+	<beans:bean id="csrfSecurityRequestMatcher"
+		class="com.aashdit.csms.util.CsrfSecurityRequestMatcher">
+	</beans:bean>
+
+	<beans:bean id="userDetailsServiceImpl"
+		class="com.aashdit.csms.service.UserDetailsServiceImpl">
+	</beans:bean>
+
+	<beans:bean id="encoder"
+		class="org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder">
+		<beans:constructor-arg name="strength" value="11" />
+	</beans:bean>
+
+</beans:beans>
+	
